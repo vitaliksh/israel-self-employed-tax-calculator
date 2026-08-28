@@ -52,7 +52,9 @@ export function calculateBenefits(input, parameters, months = 12) {
   const pensionCredit = pensionCreditBase * rules.pensionCreditValueRate;
   const studyEligibleIncome = Math.max(0, Math.min(input.selfIncome, rules.studyFundEligibleIncomeCap * ratio - input.studyFundSalaryBase));
   const studyDeduction = Math.min(studyContributionForPeriod, studyEligibleIncome * rules.studyFundDeductionRate);
-  return { pensionContributionForPeriod:round(pensionContributionForPeriod), studyContributionForPeriod:round(studyContributionForPeriod), uninsuredIncome:round(uninsuredIncome), pensionDeduction:round(pensionDeduction), pensionCreditBase:round(pensionCreditBase), pensionCredit:round(pensionCredit), studyEligibleIncome:round(studyEligibleIncome), studyDeduction:round(studyDeduction), totalDeduction:round(pensionDeduction + studyDeduction) };
+  const annualPensionRecommendation = ratio ? uninsuredIncome * (rules.pensionDeductionRate + rules.pensionCreditRate) / ratio : 0;
+  const annualStudyFundRecommendation = ratio ? studyEligibleIncome * rules.studyFundDeductionRate / ratio : 0;
+  return { pensionContributionForPeriod:round(pensionContributionForPeriod), studyContributionForPeriod:round(studyContributionForPeriod), uninsuredIncome:round(uninsuredIncome), pensionDeduction:round(pensionDeduction), pensionCreditBase:round(pensionCreditBase), pensionCredit:round(pensionCredit), studyEligibleIncome:round(studyEligibleIncome), studyDeduction:round(studyDeduction), annualPensionRecommendation:round(annualPensionRecommendation), annualStudyFundRecommendation:round(annualStudyFundRecommendation), totalDeduction:round(pensionDeduction + studyDeduction) };
 }
 
 export function calculateSelfEmployedTax(input, parameters) {

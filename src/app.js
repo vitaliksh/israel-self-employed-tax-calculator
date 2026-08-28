@@ -31,6 +31,11 @@ function render() {
   $('#income-tax').value = format(result.incomeTax); $('#income-tax').textContent = format(result.incomeTax);
   $('#insurance').value = format(result.insurance.total); $('#insurance').textContent = format(result.insurance.total);
   $('#insurance-monthly').textContent = `תשלום חודשי: ${format(input().salaryMonths ? result.insurance.total / input().salaryMonths : 0)}`;
+  $('#recommended-pension').textContent = format(result.benefits.annualPensionRecommendation);
+  $('#recommended-study-fund').textContent = format(result.benefits.annualStudyFundRecommendation);
+  $('#recommendation-note').textContent = input().selfIncome && input().salaryMonths
+    ? 'סכום שנתי משוער: הפקדה מעבר לו אינה מוסיפה הטבת מס לפי המודל הנוכחי.'
+    : 'יש להזין הכנסה ומספר חודשים כדי לקבל המלצה.';
   $('#pension-benefit').value = format(result.pensionBenefit); $('#pension-benefit').textContent = format(result.pensionBenefit);
   $('#pension-credit-detail').textContent = result.benefits.pensionCredit ? `זיכוי ישיר: ${format(result.benefits.pensionCredit)}` : '';
   $('#study-benefit').value = format(result.studyBenefit); $('#study-benefit').textContent = format(result.studyBenefit);
