@@ -70,10 +70,7 @@ function calculateCore(input, parameters) {
   const unusedCreditPointsValue = round(Math.max(0, input.creditPoints * parameters.incomeTax.creditPointAnnualValue * (months / 12) - salaryTax.credits));
   const creditPointsUsedForBusiness = round(Math.min(selfIncomeTaxBeforeCredits, unusedCreditPointsValue));
   const incomeTax = round(Math.max(0, selfIncomeTaxBeforeCredits - creditPointsUsedForBusiness - benefits.pensionCredit));
-  const beforeBenefitsTax = calculateIncomeTax(combinedBeforeBenefits - insurance.incomeTaxDeduction, input.creditPoints, parameters, months).net;
-  const pensionBenefit = round(Math.max(0, beforeBenefitsTax - calculateIncomeTax(combinedBeforeBenefits - insurance.incomeTaxDeduction - benefits.pensionDeduction, input.creditPoints, parameters, months).net + benefits.pensionCredit));
-  const studyBenefit = round(Math.max(0, calculateIncomeTax(combinedBeforeBenefits - insurance.incomeTaxDeduction - benefits.pensionDeduction, input.creditPoints, parameters, months).net - combinedTax.net));
-  return { months, salaryAnnual, combinedBeforeBenefits, combinedTaxable, benefits, salaryTax, combinedTax, selfIncomeTaxBeforeCredits, unusedCreditPointsValue, creditPointsUsedForBusiness, incomeTax, insurance, pensionBenefit, studyBenefit, total:round(incomeTax + insurance.total) };
+  return { months, salaryAnnual, combinedBeforeBenefits, combinedTaxable, benefits, salaryTax, combinedTax, selfIncomeTaxBeforeCredits, unusedCreditPointsValue, creditPointsUsedForBusiness, incomeTax, insurance, total:round(incomeTax + insurance.total) };
 }
 
 function annualRecommendation(input, parameters, field, cap) {
@@ -95,6 +92,20 @@ function annualRecommendation(input, parameters, field, cap) {
 
 export function calculateSelfEmployedTax(input, parameters) {
   const result = calculateCore(input, parameters);
+  // Attribute each benefit to its own contribution while retaining the other contribution.
+  // This shows the actual reduction in both income tax and National Insurance.
+  const withoutPension = calculateCore({ ...input, pension: 0 }, parameters);
+  const withoutStudyFund = calculateCore({ ...input, studyFund: 0 }, parameters);
+  result.pensionBenefit = {
+    incomeTax: round(Math.max(0, withoutPension.incomeTax - result.incomeTax)),
+    insurance: round(Math.max(0, withoutPension.insurance.total - result.insurance.total)),
+    total: round(Math.max(0, withoutPension.total - result.total))
+  };
+  result.studyBenefit = {
+    incomeTax: round(Math.max(0, withoutStudyFund.incomeTax - result.incomeTax)),
+    insurance: round(Math.max(0, withoutStudyFund.insurance.total - result.insurance.total)),
+    total: round(Math.max(0, withoutStudyFund.total - result.total))
+  };
   const ratio = periodRatio(result.months);
   const pensionCap = ratio ? result.benefits.uninsuredIncome * (parameters.benefits.pensionDeductionRate + parameters.benefits.pensionCreditRate) / ratio : 0;
   const studyFundCap = ratio ? result.benefits.studyEligibleIncome * parameters.benefits.studyFundDeductionRate / ratio : 0;

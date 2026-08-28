@@ -38,9 +38,10 @@ function render() {
       ? 'המלצה שנתית המבוססת על חיסכון מס ממשי במודל הנוכחי. הפקדה מעבר לסכום אינה מוסיפה הטבת מס.'
       : 'לפי הנתונים שהוזנו, הפקדה נוספת אינה יוצרת הטבת מס בתקופת החישוב.')
     : 'יש להזין הכנסה ומספר חודשים כדי לקבל המלצה.';
-  $('#pension-benefit').value = format(result.pensionBenefit); $('#pension-benefit').textContent = format(result.pensionBenefit);
-  $('#pension-credit-detail').textContent = result.benefits.pensionCredit ? `זיכוי ישיר: ${format(result.benefits.pensionCredit)}` : '';
-  $('#study-benefit').value = format(result.studyBenefit); $('#study-benefit').textContent = format(result.studyBenefit);
+  $('#pension-benefit').value = format(result.pensionBenefit.total); $('#pension-benefit').textContent = format(result.pensionBenefit.total);
+  $('#pension-benefit-detail').textContent = `מס הכנסה: ${format(result.pensionBenefit.incomeTax)} · ביטוח לאומי: ${format(result.pensionBenefit.insurance)}`;
+  $('#study-benefit').value = format(result.studyBenefit.total); $('#study-benefit').textContent = format(result.studyBenefit.total);
+  $('#study-benefit-detail').textContent = `מס הכנסה: ${format(result.studyBenefit.incomeTax)} · ביטוח לאומי: ${format(result.studyBenefit.insurance)}`;
   $('#starting-income').textContent = format(result.combinedBeforeBenefits);
   $('#insurance-deduction').textContent = `−${format(result.insurance.incomeTaxDeduction)}`;
   $('#pension-deduction').textContent = `−${format(result.benefits.pensionDeduction)}`;
