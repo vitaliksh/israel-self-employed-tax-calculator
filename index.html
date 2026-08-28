@@ -22,11 +22,11 @@
         <h2 id="inputs-title">נתוני הכנסה והפקדות</h2>
         <p class="muted">יש להזין סכומים מצטברים מתחילת שנת המס ועד סוף התקופה. ההכנסה מעסק היא רווח לאחר הוצאות עסקיות ולפני הטבות מס אישיות.</p>
         <form id="calculator-form">
-          <label>הכנסה לתקופה (₪)<input id="self-income" name="selfIncome" inputmode="decimal" value="180000" min="0" required /></label>
-          <label>שכר חודשי ברוטו כשכיר (₪)<input id="salary-monthly" name="salaryMonthly" inputmode="decimal" value="12000" min="0" required /></label>
+          <label>הכנסה לתקופה (₪)<input id="self-income" name="selfIncome" data-money inputmode="decimal" value="180000" min="0" required /></label>
+          <label>שכר חודשי ברוטו כשכיר (₪)<input id="salary-monthly" name="salaryMonthly" data-money inputmode="decimal" value="12000" min="0" required /></label>
           <label>לתקופה, חודשים<input id="salary-months" name="salaryMonths" type="number" value="12" min="0" max="12" required /></label>
-          <label>הפקדה מצטברת לקרן פנסיה (₪)<input id="pension" name="pension" inputmode="decimal" value="0" min="0" required /></label>
-          <label>הפקדה מצטברת לקרן השתלמות (₪)<input id="study-fund" name="studyFund" inputmode="decimal" value="0" min="0" required /></label>
+          <label>הפקדה שנתית לקרן פנסיה (₪)<input id="pension" name="pension" data-money inputmode="decimal" value="0" min="0" required /></label>
+          <label>הפקדה שנתית לקרן השתלמות (₪)<input id="study-fund" name="studyFund" data-money inputmode="decimal" value="0" min="0" required /></label>
           <label>נקודות זיכוי שנתיות<input id="credit-points" name="creditPoints" inputmode="decimal" value="2.25" min="0" step="0.25" required /></label>
         </form>
       </section>
@@ -53,6 +53,10 @@
         <details class="card breakdown">
           <summary>איך השכר משפיע על המס</summary>
           <dl id="breakdown"></dl>
+        </details>
+        <details class="card calculation-details">
+          <summary>פירוט מלא של חישובים</summary>
+          <div id="full-calculation"></div>
         </details>
       </section>
     </main>
