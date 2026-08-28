@@ -30,6 +30,7 @@ function render() {
   const result = calculateSelfEmployedTax(input(), parameters);
   $('#income-tax').value = format(result.incomeTax); $('#income-tax').textContent = format(result.incomeTax);
   $('#insurance').value = format(result.insurance.total); $('#insurance').textContent = format(result.insurance.total);
+  $('#insurance-monthly').textContent = `תשלום חודשי: ${format(input().salaryMonths ? result.insurance.total / input().salaryMonths : 0)}`;
   $('#pension-benefit').value = format(result.pensionBenefit); $('#pension-benefit').textContent = format(result.pensionBenefit);
   $('#pension-credit-detail').textContent = result.benefits.pensionCredit ? `זיכוי ישיר: ${format(result.benefits.pensionCredit)}` : '';
   $('#study-benefit').value = format(result.studyBenefit); $('#study-benefit').textContent = format(result.studyBenefit);
@@ -75,9 +76,23 @@ function renderFormulas() { $('#formula-list').innerHTML = [
 
 function renderFullCalculation(result) {
   const rows = (items) => `<dl>${items.map(([label, value]) => `<dt>${label}</dt><dd>${value}</dd>`).join('')}</dl>`;
+  const brackets = (title, taxRows, compareRows = null) => {
+    const items = taxRows.map((row, index) => {
+      const difference = compareRows ? Math.max(0, row.tax - compareRows[index].tax) : row.tax;
+      const taxableAmount = compareRows ? Math.max(0, row.amount - compareRows[index].amount) : row.amount;
+      if (!taxableAmount) return '';
+      const range = Number.isFinite(row.upper) ? `${format(row.lower)}–${format(row.upper)}` : `מעל ${format(row.lower)}`;
+      return `<li><span><span class="calculation-label">${range} × ${row.rate * 100}%</span><br>${format(taxableAmount)}</span><strong>${format(difference)}</strong></li>`;
+    }).join('');
+    return `<h3>${title}</h3><ul class="bracket-list">${items || '<li><span>אין סכום חייב במדרגות אלו</span><strong>₪0</strong></li>'}</ul>`;
+  };
+  const periodPointValue = result.salaryTax.creditPointValueForPeriod;
+  const allPointsValue = input().creditPoints * periodPointValue;
   $('#full-calculation').innerHTML = `
     <section><h3>מס הכנסה</h3><p class="subtle">תקופת החישוב: ${input().salaryMonths} חודשים</p>${rows([
-      ['שכר ברוטו לתקופה', format(result.salaryAnnual)], ['הכנסה מעסק לתקופה', format(input().selfIncome)], ['ניכויים מוכרים', `−${format(result.benefits.totalDeduction + result.insurance.incomeTaxDeduction)}`], ['הכנסה חייבת למס לתקופה', format(result.combinedTaxable)], ['מס על השכר לפני נקודות זיכוי', format(result.salaryTax.gross)], ['מס בגין העסק לפני נקודות זיכוי', format(result.selfIncomeTaxBeforeCredits)], ['יתרת נקודות זיכוי לעסק', `−${format(result.creditPointsUsedForBusiness)}`], ['זיכוי פנסיה', `−${format(result.benefits.pensionCredit)}`], ['מס הכנסה בגין העסק', format(result.incomeTax)]
+      ['שכר ברוטו לתקופה', format(result.salaryAnnual)], ['הכנסה מעסק לתקופה', format(input().selfIncome)], ['ניכויים מוכרים', `−${format(result.benefits.totalDeduction + result.insurance.incomeTaxDeduction)}`], ['הכנסה חייבת למס לתקופה', format(result.combinedTaxable)]
+    ])}${brackets('חישוב מס על השכר לפני נקודות זיכוי', result.salaryTax.brackets)}${brackets('חישוב מס בגין העסק לפני נקודות זיכוי', result.combinedTax.brackets, result.salaryTax.brackets)}${rows([
+      ['שווי נקודת זיכוי אחת לתקופה', format(periodPointValue)], ['חישוב נקודות זיכוי לתקופה', `${input().creditPoints} × ${format(periodPointValue)} = ${format(allPointsValue)}`], ['נקודות זיכוי שנוצלו בשכר', `−${format(result.salaryTax.credits)}`], ['יתרת נקודות זיכוי לעסק', format(result.unusedCreditPointsValue)], ['נקודות זיכוי שנוצלו בעסק', `−${format(result.creditPointsUsedForBusiness)}`], ['זיכוי פנסיה', `−${format(result.benefits.pensionCredit)}`], ['מס הכנסה סופי בגין העסק', format(result.incomeTax)]
     ])}</section>
     <section><h3>ביטוח לאומי</h3><p class="subtle">הסכומים מותאמים ל-${input().salaryMonths} חודשים.</p>${rows([
       ['הכנסה מעסק', format(input().selfIncome)], ['שכר לתקופה', format(result.salaryAnnual)], ['תקרת בסיס לתקופה', format(result.insurance.maximumBaseForPeriod)], ['בסיס לפני התאמה', format(result.insurance.rawBase)], ['בסיס לאחר נוסחת התאמה', format(result.insurance.adjustedBase)], ['בסיס בשיעור מופחת', format(result.insurance.reducedBase)], ['בסיס בשיעור מלא', format(result.insurance.fullBase)], ['ביטוח לאומי', format(result.insurance.national)], ['ביטוח בריאות', format(result.insurance.health)], ['סה״כ ביטוח לאומי ובריאות', format(result.insurance.total)]

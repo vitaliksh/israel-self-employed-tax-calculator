@@ -1,5 +1,11 @@
 const round = (value) => Math.round(value * 100) / 100;
 const periodRatio = (months) => Math.max(0, Math.min(12, months)) / 12;
+const bracketRows = (income, brackets) => brackets.map((bracket, index) => {
+  const lower = index === 0 ? 0 : (Number.isFinite(brackets[index - 1].upTo) ? brackets[index - 1].upTo : Infinity);
+  const upper = Number.isFinite(bracket.upTo) ? bracket.upTo : Infinity;
+  const amount = Math.max(0, Math.min(income, upper) - lower);
+  return { lower, upper, rate: bracket.rate, amount: round(amount), tax: round(amount * bracket.rate) };
+});
 const amountInBrackets = (income, brackets) => brackets.reduce((tax, bracket, index) => {
   const lower = index === 0 ? 0 : (Number.isFinite(brackets[index - 1].upTo) ? brackets[index - 1].upTo : Infinity);
   const upper = Number.isFinite(bracket.upTo) ? bracket.upTo : Infinity;
@@ -10,9 +16,10 @@ export function calculateIncomeTax(taxableIncome, creditPoints, parameters, mont
   const { incomeTax } = parameters;
   const ratio = periodRatio(months);
   const bracketsForPeriod = incomeTax.brackets.map((bracket) => ({ ...bracket, upTo: Number.isFinite(bracket.upTo) ? bracket.upTo * ratio : Infinity }));
-  const gross = amountInBrackets(taxableIncome, bracketsForPeriod);
+  const brackets = bracketRows(taxableIncome, bracketsForPeriod);
+  const gross = brackets.reduce((total, bracket) => total + bracket.tax, 0);
   const credits = creditPoints * incomeTax.creditPointAnnualValue * ratio;
-  return { gross: round(gross), credits: round(Math.min(gross, credits)), net: round(Math.max(0, gross - credits)) };
+  return { gross: round(gross), credits: round(Math.min(gross, credits)), net: round(Math.max(0, gross - credits)), creditPointValueForPeriod: round(incomeTax.creditPointAnnualValue * ratio), brackets };
 }
 
 export function calculateInsurance(selfIncome, salaryAnnual, parameters, months = 12) {
