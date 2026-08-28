@@ -64,7 +64,6 @@ function renderFormulas() { $('#formula-list').innerHTML = [
   ['פנסיה וקרן השתלמות', 'ניכוי פנסיה מחושב עד 11% מהכנסה עסקית שאינה מבוטחת; יתרה עשויה לזכות בזיכוי של 35% עד 5%. קרן השתלמות: עד 4.5% מהכנסה עסקית, לאחר קיזוז שכר קובע שבו המעסיק הפקיד לקרן.']
 ].map(([title, text]) => `<article class="formula"><h3>${title}</h3><p>${text}</p></article>`).join(''); }
 
-$('#calculator-form').addEventListener('submit', (event) => { event.preventDefault(); render(); });
 $('#calculator-form').addEventListener('input', render);
 $('#settings-button').addEventListener('click', () => { renderSettings(); $('#settings-dialog').showModal(); });
 $('#settings-form').addEventListener('submit', () => { saveEditedParameters(); });
