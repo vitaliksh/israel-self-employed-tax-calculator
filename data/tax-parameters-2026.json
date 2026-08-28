@@ -1,0 +1,21 @@
+{
+  "metadata": {
+    "taxYear": 2026,
+    "version": "2026.2",
+    "retrievedAt": "2026-08-28",
+    "sources": {
+      "incomeTax": "https://www.gov.il/BlobFolder/dynamiccollectorresultitem/employers-info-300326-1/he/IncomeTax_IncomeTaxEmployersInfo_employers-info-300326-1.pdf",
+      "insurance": "https://www.btl.gov.il/English%20Homepage/Insurance/National%20Insurance/Detailsoftypes/SelfEmployedPerson/Pages/Methodofcalculation.aspx",
+      "benefits": "https://www.gov.il/BlobFolder/generalpage/income-tax-guide-knowyourright/he/Guides_IncomeTax_da-2025.pdf"
+    }
+  },
+  "incomeTax": {
+    "brackets": [{"upTo":84120,"rate":0.1},{"upTo":120720,"rate":0.14},{"upTo":228000,"rate":0.2},{"upTo":301200,"rate":0.31},{"upTo":560280,"rate":0.35},{"upTo":721560,"rate":0.47},{"upTo":null,"rate":0.5}],
+    "creditPointAnnualValue": 2904
+  },
+  "insurance": {
+    "reducedMonthlyBase":7703,"maximumAnnualBase":622920,"minimumAnnualBase":41304,
+    "nationalReducedRate":0.0447,"nationalFullRate":0.1283,"healthReducedRate":0.0323,"healthFullRate":0.0517
+  },
+  "benefits": {"pensionDeductionRate":0.11,"pensionCreditRate":0.05,"pensionCreditValueRate":0.35,"pensionEligibleIncomeCap":232800,"studyFundDeductionRate":0.045,"studyFundEligibleIncomeCap":293397}
+}

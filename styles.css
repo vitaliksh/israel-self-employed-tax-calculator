@@ -1,0 +1,24 @@
+:root { --ink:#102a43; --muted:#627d98; --surface:#fff; --canvas:#f0f7f7; --teal:#0f766e; --line:#d9e2ec; --warn:#fff7d6; font-family: Arial, sans-serif; color:var(--ink); }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--canvas); line-height:1.5; }
+.topbar, .layout, .formula-section { max-width:1120px; margin-inline:auto; padding-inline:20px; }
+.topbar { min-height:128px; display:flex; align-items:center; justify-content:space-between; gap:16px; }.header-actions { display:flex; gap:8px; }
+h1,h2,h3,p { margin-top:0; } h1 { margin-bottom:0; font-size:clamp(1.8rem,4vw,2.75rem); } h2 { font-size:1.25rem; } h3 { font-size:1rem; }
+.eyebrow,.muted { color:var(--muted); font-size:.9rem; } .eyebrow { margin-bottom:5px; }
+.layout { display:grid; grid-template-columns:minmax(280px, .8fr) minmax(360px, 1.2fr); gap:24px; padding-bottom:24px; }
+.card { background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:20px; box-shadow:0 4px 12px #102a4308; }
+form { display:grid; gap:14px; } label { display:grid; gap:6px; font-weight:600; font-size:.95rem; }
+input { width:100%; border:1px solid #bcccdc; border-radius:8px; padding:11px; font:inherit; text-align:right; }
+button { border:0; border-radius:8px; padding:11px 16px; font:inherit; font-weight:700; cursor:pointer; }
+.primary { background:var(--teal); color:white; } .secondary { background:#d9f0ee; color:#075b54; }
+.results { display:grid; gap:16px; } output { display:block; font-size:1.65rem; font-weight:700; }
+.taxable-card h2 { margin-bottom:14px; }.taxable-breakdown { display:grid; grid-template-columns:1fr auto; gap:8px 20px; margin:0; }.taxable-breakdown dd { margin:0; }.divider { height:1px; background:var(--line); margin:16px 0; }.taxable-total { display:flex; justify-content:space-between; align-items:center; font-weight:700; }.taxable-total output { font-size:1.4rem; }
+.result-grid { display:grid; grid-template-columns:repeat(2, 1fr); gap:12px; } .result-grid .card { min-height:120px; }
+.result-grid h3 { color:var(--muted); } .breakdown { cursor:pointer; }.breakdown > summary { color:var(--teal); font-weight:700; list-style:none; }.breakdown > summary::-webkit-details-marker { display:none; }.breakdown[open] > summary { margin-bottom:16px; }.breakdown dl { display:grid; grid-template-columns:1fr auto; gap:9px 20px; margin:0; cursor:default; } .breakdown dd { margin:0; font-weight:bold; }
+.notice { padding:12px 16px; background:#d9f0ee; color:#075b54; border-radius:10px; font-weight:bold; } .hidden { display:none; }
+.formula-section { padding-bottom:48px; cursor:pointer; } .formula-section > summary { background:#d9f0ee; color:#075b54; border-radius:8px; padding:11px 16px; font-weight:700; list-style:none; } .formula-section > summary::-webkit-details-marker { display:none; } .formula-section[open] > summary { margin-bottom:12px; } .formula { background:#fff; border-bottom:1px solid var(--line); padding:16px; cursor:default; } .formula:first-child { border-radius:16px 16px 0 0; } .formula:last-child { border:0; border-radius:0 0 16px 16px; }
+dialog { max-width:min(760px, calc(100% - 30px)); border:0; border-radius:16px; box-shadow:0 20px 70px #0006; padding:0; } dialog::backdrop { background:#102a4366; } dialog form { padding:24px; max-height:80vh; overflow:auto; }
+.dialog-header,.dialog-actions { display:flex; align-items:center; justify-content:space-between; gap:12px; } .dialog-header button { font-size:1.5rem; padding:2px 8px; } .parameter-row { display:grid; grid-template-columns:1fr 150px; gap:10px; border-top:1px solid var(--line); padding-top:12px; } .parameter-row small { grid-column:1/-1; color:var(--muted); direction:ltr; text-align:left; overflow-wrap:anywhere; }
+.parameter-row input, .open-ended { direction:ltr; unicode-bidi:plaintext; }
+.open-ended { padding:11px; border:1px solid #bcccdc; border-radius:8px; color:var(--muted); font-size:1rem; }
+@media (max-width:760px) { .topbar { min-height:auto; padding-top:20px; padding-bottom:20px; align-items:start; } .layout { grid-template-columns:1fr; padding-inline:14px; } .topbar,.formula-section { padding-inline:14px; } .result-grid { grid-template-columns:1fr; } .topbar .secondary { padding:8px 10px; font-size:.85rem; } }

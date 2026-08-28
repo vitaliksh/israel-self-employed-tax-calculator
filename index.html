@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0f766e" />
+    <title>מחשבון מס לעצמאי — 2026</title>
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">שנת המס 2026 · גרסת נתונים <span id="data-version"></span></p>
+        <h1>מחשבון מס לעצמאי</h1>
+      </div>
+      <div class="header-actions"><button id="update-button" class="secondary" type="button">בדיקת עדכון</button><button id="settings-button" class="secondary" type="button">הגדרות נתונים</button></div>
+    </header>
+
+    <main class="layout">
+      <section class="card input-card" aria-labelledby="inputs-title">
+        <h2 id="inputs-title">נתוני הכנסה והפקדות</h2>
+        <p class="muted">יש להזין סכומים מצטברים מתחילת שנת המס ועד סוף התקופה. ההכנסה מעסק היא רווח לאחר הוצאות עסקיות ולפני הטבות מס אישיות.</p>
+        <form id="calculator-form">
+          <label>הכנסה לתקופה (₪)<input id="self-income" name="selfIncome" inputmode="decimal" value="180000" min="0" required /></label>
+          <label>שכר חודשי ברוטו כשכיר (₪)<input id="salary-monthly" name="salaryMonthly" inputmode="decimal" value="12000" min="0" required /></label>
+          <label>לתקופה, חודשים<input id="salary-months" name="salaryMonths" type="number" value="12" min="0" max="12" required /></label>
+          <label>הפקדה מצטברת לקרן פנסיה (₪)<input id="pension" name="pension" inputmode="decimal" value="0" min="0" required /></label>
+          <label>הפקדה מצטברת לקרן השתלמות (₪)<input id="study-fund" name="studyFund" inputmode="decimal" value="0" min="0" required /></label>
+          <label>נקודות זיכוי שנתיות<input id="credit-points" name="creditPoints" inputmode="decimal" value="2.25" min="0" step="0.25" required /></label>
+          <button class="primary" type="submit">חשב</button>
+        </form>
+      </section>
+
+      <section class="results" aria-live="polite">
+        <div id="data-updated" class="notice hidden">נתוני המס עודכנו. החישוב מתבצע כעת לפי נתונים חדשים.</div>
+        <div class="card taxable-card">
+          <h2>הכנסה חייבת במס</h2>
+          <dl class="taxable-breakdown">
+            <dt>הכנסה התחלתית</dt><dd id="starting-income">₪0</dd>
+            <dt>ניכוי ביטוח לאומי</dt><dd id="insurance-deduction">₪0</dd>
+            <dt>ניכוי קרן פנסיה</dt><dd id="pension-deduction">₪0</dd>
+            <dt>ניכוי קרן השתלמות</dt><dd id="study-deduction">₪0</dd>
+          </dl>
+          <div class="divider"></div>
+          <div class="taxable-total"><span>הכנסה חייבת למס</span><output id="taxable-income">₪0</output></div>
+        </div>
+        <div class="result-grid">
+          <article class="card"><h3>מס הכנסה</h3><output id="income-tax">₪0</output></article>
+          <article class="card"><h3>ביטוח לאומי</h3><output id="insurance">₪0</output></article>
+          <article class="card"><h3>הטבת פנסיה מחושבת</h3><output id="pension-benefit">₪0</output><small id="pension-credit-detail"></small></article>
+          <article class="card"><h3>הטבת השתלמות מחושבת</h3><output id="study-benefit">₪0</output></article>
+        </div>
+        <details class="card breakdown">
+          <summary>איך השכר משפיע על המס</summary>
+          <dl id="breakdown"></dl>
+        </details>
+      </section>
+    </main>
+
+    <dialog id="settings-dialog">
+      <form method="dialog" id="settings-form">
+        <div class="dialog-header"><h2>נתוני מס ומקורות</h2><button value="cancel" aria-label="סגור">×</button></div>
+        <p class="muted">עריכה נשמרת בדפדפן זה בלבד. ניתן לאפס בכל עת לנתונים הרשמיים.</p>
+        <div id="parameter-editor"></div>
+        <div class="dialog-actions"><button id="reset-parameters" class="secondary" type="button">איפוס לברירת מחדל</button><button class="primary" value="save">שמור נתונים</button></div>
+      </form>
+    </dialog>
+
+    <details class="formula-section">
+      <summary>נוסחאות וחישוב</summary>
+      <div id="formula-list"></div>
+    </details>
+    <script type="module" src="./src/app.js"></script>
+  </body>
+</html>
