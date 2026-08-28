@@ -34,7 +34,9 @@ function render() {
   $('#recommended-pension').textContent = format(result.benefits.annualPensionRecommendation);
   $('#recommended-study-fund').textContent = format(result.benefits.annualStudyFundRecommendation);
   $('#recommendation-note').textContent = input().selfIncome && input().salaryMonths
-    ? 'סכום שנתי משוער: הפקדה מעבר לו אינה מוסיפה הטבת מס לפי המודל הנוכחי.'
+    ? (result.benefits.annualPensionRecommendation || result.benefits.annualStudyFundRecommendation
+      ? 'המלצה שנתית המבוססת על חיסכון מס ממשי במודל הנוכחי. הפקדה מעבר לסכום אינה מוסיפה הטבת מס.'
+      : 'לפי הנתונים שהוזנו, הפקדה נוספת אינה יוצרת הטבת מס בתקופת החישוב.')
     : 'יש להזין הכנסה ומספר חודשים כדי לקבל המלצה.';
   $('#pension-benefit').value = format(result.pensionBenefit); $('#pension-benefit').textContent = format(result.pensionBenefit);
   $('#pension-credit-detail').textContent = result.benefits.pensionCredit ? `זיכוי ישיר: ${format(result.benefits.pensionCredit)}` : '';
@@ -100,7 +102,7 @@ function renderFullCalculation(result) {
       ['שווי נקודת זיכוי אחת לתקופה', format(periodPointValue)], ['חישוב נקודות זיכוי לתקופה', `${input().creditPoints} × ${format(periodPointValue)} = ${format(allPointsValue)}`], ['נקודות זיכוי שנוצלו בשכר', `−${format(result.salaryTax.credits)}`], ['יתרת נקודות זיכוי לעסק', format(result.unusedCreditPointsValue)], ['נקודות זיכוי שנוצלו בעסק', `−${format(result.creditPointsUsedForBusiness)}`], ['זיכוי פנסיה', `−${format(result.benefits.pensionCredit)}`], ['מס הכנסה סופי בגין העסק', format(result.incomeTax)]
     ])}</section>
     <section><h3>ביטוח לאומי</h3><p class="subtle">הסכומים מותאמים ל-${input().salaryMonths} חודשים.</p>${rows([
-      ['הכנסה מעסק', format(input().selfIncome)], ['שכר לתקופה', format(result.salaryAnnual)], ['תקרת בסיס לתקופה', format(result.insurance.maximumBaseForPeriod)], ['בסיס לפני התאמה', format(result.insurance.rawBase)], ['בסיס לאחר נוסחת התאמה', format(result.insurance.adjustedBase)], ['בסיס בשיעור מופחת', format(result.insurance.reducedBase)], ['בסיס בשיעור מלא', format(result.insurance.fullBase)], ['ביטוח לאומי', format(result.insurance.national)], ['ביטוח בריאות', format(result.insurance.health)], ['סה״כ ביטוח לאומי ובריאות', format(result.insurance.total)]
+      ['הכנסה מעסק', format(input().selfIncome)], ['ניכוי פנסיה בבסיס ביטוח לאומי', `−${format(result.insurance.pensionFundDeduction)}`], ['הכנסה לעסק לאחר ניכוי פנסיה', format(result.insurance.incomeAfterPensionDeduction)], ['שכר לתקופה', format(result.salaryAnnual)], ['תקרת בסיס לתקופה', format(result.insurance.maximumBaseForPeriod)], ['בסיס לפני התאמה', format(result.insurance.rawBase)], ['בסיס לאחר נוסחת התאמה', format(result.insurance.adjustedBase)], ['בסיס בשיעור מופחת', format(result.insurance.reducedBase)], ['בסיס בשיעור מלא', format(result.insurance.fullBase)], ['ביטוח לאומי', format(result.insurance.national)], ['ביטוח בריאות', format(result.insurance.health)], ['סה״כ ביטוח לאומי ובריאות', format(result.insurance.total)]
     ])}</section>
     <section><h3>הפקדות לתקופה</h3>${rows([
       ['הפקדה שנתית לפנסיה', format(input().pension)], ['חלק הפנסיה לתקופה', format(result.benefits.pensionContributionForPeriod)], ['הפקדה שנתית לקרן השתלמות', format(input().studyFund)], ['חלק קרן ההשתלמות לתקופה', format(result.benefits.studyContributionForPeriod)]

@@ -6,11 +6,6 @@ const bracketRows = (income, brackets) => brackets.map((bracket, index) => {
   const amount = Math.max(0, Math.min(income, upper) - lower);
   return { lower, upper, rate: bracket.rate, amount: round(amount), tax: round(amount * bracket.rate) };
 });
-const amountInBrackets = (income, brackets) => brackets.reduce((tax, bracket, index) => {
-  const lower = index === 0 ? 0 : (Number.isFinite(brackets[index - 1].upTo) ? brackets[index - 1].upTo : Infinity);
-  const upper = Number.isFinite(bracket.upTo) ? bracket.upTo : Infinity;
-  return tax + Math.max(0, Math.min(income, upper) - lower) * bracket.rate;
-}, 0);
 
 export function calculateIncomeTax(taxableIncome, creditPoints, parameters, months = 12) {
   const { incomeTax } = parameters;
@@ -52,16 +47,18 @@ export function calculateBenefits(input, parameters, months = 12) {
   const pensionCredit = pensionCreditBase * rules.pensionCreditValueRate;
   const studyEligibleIncome = Math.max(0, Math.min(input.selfIncome, rules.studyFundEligibleIncomeCap * ratio - input.studyFundSalaryBase));
   const studyDeduction = Math.min(studyContributionForPeriod, studyEligibleIncome * rules.studyFundDeductionRate);
-  const annualPensionRecommendation = ratio ? uninsuredIncome * (rules.pensionDeductionRate + rules.pensionCreditRate) / ratio : 0;
-  const annualStudyFundRecommendation = ratio ? studyEligibleIncome * rules.studyFundDeductionRate / ratio : 0;
-  return { pensionContributionForPeriod:round(pensionContributionForPeriod), studyContributionForPeriod:round(studyContributionForPeriod), uninsuredIncome:round(uninsuredIncome), pensionDeduction:round(pensionDeduction), pensionCreditBase:round(pensionCreditBase), pensionCredit:round(pensionCredit), studyEligibleIncome:round(studyEligibleIncome), studyDeduction:round(studyDeduction), annualPensionRecommendation:round(annualPensionRecommendation), annualStudyFundRecommendation:round(annualStudyFundRecommendation), totalDeduction:round(pensionDeduction + studyDeduction) };
+  return { pensionContributionForPeriod:round(pensionContributionForPeriod), studyContributionForPeriod:round(studyContributionForPeriod), uninsuredIncome:round(uninsuredIncome), pensionDeduction:round(pensionDeduction), pensionCreditBase:round(pensionCreditBase), pensionCredit:round(pensionCredit), studyEligibleIncome:round(studyEligibleIncome), studyDeduction:round(studyDeduction), totalDeduction:round(pensionDeduction + studyDeduction) };
 }
 
-export function calculateSelfEmployedTax(input, parameters) {
+function calculateCore(input, parameters) {
   const months = Math.max(0, Math.min(12, input.salaryMonths));
   const salaryAnnual = input.salaryMonthly * months;
   const benefits = calculateBenefits(input, parameters, months);
-  const insurance = calculateInsurance(input.selfIncome, salaryAnnual, parameters, months);
+  // National Insurance deducts the Income Tax Authority-recognized provident-fund amount from the business income base.
+  const insuranceIncomeAfterPensionDeduction = Math.max(0, input.selfIncome - benefits.pensionDeduction);
+  const insurance = calculateInsurance(insuranceIncomeAfterPensionDeduction, salaryAnnual, parameters, months);
+  insurance.pensionFundDeduction = benefits.pensionDeduction;
+  insurance.incomeAfterPensionDeduction = round(insuranceIncomeAfterPensionDeduction);
   const combinedBeforeBenefits = salaryAnnual + input.selfIncome;
   const combinedTaxable = Math.max(0, combinedBeforeBenefits - benefits.totalDeduction - insurance.incomeTaxDeduction);
   const salaryTax = calculateIncomeTax(salaryAnnual, input.creditPoints, parameters, months);
@@ -76,5 +73,32 @@ export function calculateSelfEmployedTax(input, parameters) {
   const beforeBenefitsTax = calculateIncomeTax(combinedBeforeBenefits - insurance.incomeTaxDeduction, input.creditPoints, parameters, months).net;
   const pensionBenefit = round(Math.max(0, beforeBenefitsTax - calculateIncomeTax(combinedBeforeBenefits - insurance.incomeTaxDeduction - benefits.pensionDeduction, input.creditPoints, parameters, months).net + benefits.pensionCredit));
   const studyBenefit = round(Math.max(0, calculateIncomeTax(combinedBeforeBenefits - insurance.incomeTaxDeduction - benefits.pensionDeduction, input.creditPoints, parameters, months).net - combinedTax.net));
-  return { salaryAnnual, combinedBeforeBenefits, combinedTaxable, benefits, salaryTax, combinedTax, selfIncomeTaxBeforeCredits, unusedCreditPointsValue, creditPointsUsedForBusiness, incomeTax, insurance, pensionBenefit, studyBenefit, total:round(incomeTax + insurance.total) };
+  return { months, salaryAnnual, combinedBeforeBenefits, combinedTaxable, benefits, salaryTax, combinedTax, selfIncomeTaxBeforeCredits, unusedCreditPointsValue, creditPointsUsedForBusiness, incomeTax, insurance, pensionBenefit, studyBenefit, total:round(incomeTax + insurance.total) };
+}
+
+function annualRecommendation(input, parameters, field, cap) {
+  if (!cap || !input.salaryMonths) return 0;
+  const baselineInput = { ...input, pension: 0, studyFund: 0 };
+  const baseline = calculateCore(baselineInput, parameters).total;
+  const saving = (value) => Math.max(0, baseline - calculateCore({ ...baselineInput, [field]: value }, parameters).total);
+  const maximumSaving = saving(cap);
+  if (maximumSaving < .01) return 0;
+  let low = 0;
+  let high = cap;
+  for (let step = 0; step < 24; step += 1) {
+    const middle = (low + high) / 2;
+    if (maximumSaving - saving(middle) <= .01) high = middle;
+    else low = middle;
+  }
+  return round(high);
+}
+
+export function calculateSelfEmployedTax(input, parameters) {
+  const result = calculateCore(input, parameters);
+  const ratio = periodRatio(result.months);
+  const pensionCap = ratio ? result.benefits.uninsuredIncome * (parameters.benefits.pensionDeductionRate + parameters.benefits.pensionCreditRate) / ratio : 0;
+  const studyFundCap = ratio ? result.benefits.studyEligibleIncome * parameters.benefits.studyFundDeductionRate / ratio : 0;
+  result.benefits.annualPensionRecommendation = annualRecommendation(input, parameters, 'pension', pensionCap);
+  result.benefits.annualStudyFundRecommendation = annualRecommendation(input, parameters, 'studyFund', studyFundCap);
+  return result;
 }
