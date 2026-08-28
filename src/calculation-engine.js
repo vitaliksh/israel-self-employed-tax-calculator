@@ -54,11 +54,12 @@ function calculateCore(input, parameters) {
   const months = Math.max(0, Math.min(12, input.salaryMonths));
   const salaryAnnual = input.salaryMonthly * months;
   const benefits = calculateBenefits(input, parameters, months);
-  // National Insurance deducts the Income Tax Authority-recognized provident-fund amount from the business income base.
-  const insuranceIncomeAfterPensionDeduction = Math.max(0, input.selfIncome - benefits.pensionDeduction);
-  const insurance = calculateInsurance(insuranceIncomeAfterPensionDeduction, salaryAnnual, parameters, months);
+  // Recognized pension and study-fund deductions reduce the business income base for National Insurance.
+  const insuranceIncomeAfterContributionDeductions = Math.max(0, input.selfIncome - benefits.pensionDeduction - benefits.studyDeduction);
+  const insurance = calculateInsurance(insuranceIncomeAfterContributionDeductions, salaryAnnual, parameters, months);
   insurance.pensionFundDeduction = benefits.pensionDeduction;
-  insurance.incomeAfterPensionDeduction = round(insuranceIncomeAfterPensionDeduction);
+  insurance.studyFundDeduction = benefits.studyDeduction;
+  insurance.incomeAfterContributionDeductions = round(insuranceIncomeAfterContributionDeductions);
   const combinedBeforeBenefits = salaryAnnual + input.selfIncome;
   const combinedTaxable = Math.max(0, combinedBeforeBenefits - benefits.totalDeduction - insurance.incomeTaxDeduction);
   const salaryTax = calculateIncomeTax(salaryAnnual, input.creditPoints, parameters, months);
