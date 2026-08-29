@@ -17,7 +17,7 @@ const thousandFormat = new Intl.NumberFormat('he-IL', { maximumFractionDigits: 0
 
 function input() {
   const values = Object.fromEntries([...new FormData($('#calculator-form'))].map(([key, value]) => [key, numeric(value)]));
-  return { ...values, insuredSalary: values.salaryMonthly * values.salaryMonths, studyFundSalaryBase: 0 };
+  return { ...values, oldAgePension: $('#old-age-pension').checked, insuredSalary: values.salaryMonthly * values.salaryMonths, studyFundSalaryBase: 0 };
 }
 function format(value) { return currency.format(value); }
 function formatMoneyInput(field) {
@@ -30,7 +30,9 @@ function render() {
   const result = calculateSelfEmployedTax(input(), parameters);
   $('#income-tax').value = format(result.incomeTax); $('#income-tax').textContent = format(result.incomeTax);
   $('#insurance').value = format(result.insurance.total); $('#insurance').textContent = format(result.insurance.total);
-  $('#insurance-monthly').textContent = `תשלום חודשי: ${format(input().salaryMonths ? result.insurance.total / input().salaryMonths : 0)}`;
+  $('#insurance-monthly').textContent = result.insurance.exempt
+    ? 'פטור/ה מביטוח לאומי עקב קצבת זיקנה'
+    : `תשלום חודשי: ${format(input().salaryMonths ? result.insurance.total / input().salaryMonths : 0)}`;
   $('#recommended-pension').textContent = format(result.benefits.annualPensionRecommendation);
   $('#recommended-study-fund').textContent = format(result.benefits.annualStudyFundRecommendation);
   $('#recommendation-note').textContent = input().selfIncome && input().salaryMonths
@@ -78,7 +80,7 @@ function saveEditedParameters() {
 }
 function renderFormulas() { $('#formula-list').innerHTML = [
   ['מס הכנסה', 'כל מדרגות המס, נקודות הזיכוי ותקרות ההטבה מותאמות למספר החודשים שנבחר. שלב 1: השכר ברוטו ממלא תחילה את מדרגות המס לתקופה ומנצל את נקודות הזיכוי לתקופה עד לגובה המס שלו. שלב 2: ההכנסה מעסק, לאחר ניכויים מוכרים, מחושבת רק מהיתרה במדרגה שבה הסתיים השכר ומהמדרגות שמעליה. שלב 3: מהמס בגין העסק מופחתות רק נקודות הזיכוי שלא נוצלו בשכר וזיכוי הפנסיה. המס שנוכה מהשכר אינו מתווסף לתוצאה — התוצאה היא המס בגין ההכנסה כעצמאי בלבד.', 'Tax business = max(0, Tax(salary + business − deductions) − Tax(salary) − unused credit points − pension credit)'],
-  ['ביטוח לאומי ובריאות', 'בסיס הביטוח מחושב לפי נוסחת ביטוח לאומי: הכנסה מתואמת לאחר רכיב הניכוי של 52% מדמי ביטוח לאומי. השכר מנצל קודם את המדרגה המופחתת.', 'X = (Y + B × 0.52 × (t2 − t1)) / (1 + 0.52 × t2)'],
+    ['ביטוח לאומי ובריאות', 'מקבל/ת קצבת זיקנה פטור/ה מחישוב זה. אחרת, בסיס הביטוח מחושב רק מההכנסה מעסק לפי נוסחת ביטוח לאומי, לאחר רכיב הניכוי של 52%. השכר אינו מחויב כאן; הוא משמש רק לקביעת המדרגה ולבדיקת תקרת ההכנסה.', 'X = (Y + B × 0.52 × (t2 − t1)) / (1 + 0.52 × t2)'],
   ['פנסיה וקרן השתלמות', 'הפקדה שנתית מומרת תחילה לחלק היחסי בתקופה. ניכוי פנסיה מחושב עד 11% מהכנסה עסקית שאינה מבוטחת; יתרה עשויה לזכות בזיכוי של 35% עד 5%. קרן השתלמות: עד 4.5% מהכנסה עסקית, לאחר קיזוז שכר קובע שבו המעסיק הפקיד לקרן.', 'period contribution = annual contribution × months / 12']
 ].map(([title, text, equation]) => `<article class="formula"><h3>${title}</h3><p>${text}</p><p class="formula-equation">${equation}</p></article>`).join(''); }
 
@@ -102,8 +104,8 @@ function renderFullCalculation(result) {
     ])}${brackets('חישוב מס על השכר לפני נקודות זיכוי', result.salaryTax.brackets)}${brackets('חישוב מס בגין העסק לפני נקודות זיכוי', result.combinedTax.brackets, result.salaryTax.brackets)}${rows([
       ['שווי נקודת זיכוי אחת לתקופה', format(periodPointValue)], ['חישוב נקודות זיכוי לתקופה', `${input().creditPoints} × ${format(periodPointValue)} = ${format(allPointsValue)}`], ['נקודות זיכוי שנוצלו בשכר', `−${format(result.salaryTax.credits)}`], ['יתרת נקודות זיכוי לעסק', format(result.unusedCreditPointsValue)], ['נקודות זיכוי שנוצלו בעסק', `−${format(result.creditPointsUsedForBusiness)}`], ['זיכוי פנסיה', `−${format(result.benefits.pensionCredit)}`], ['מס הכנסה סופי בגין העסק', format(result.incomeTax)]
     ])}</section>
-    <section><h3>ביטוח לאומי</h3><p class="subtle">הסכומים מותאמים ל-${input().salaryMonths} חודשים.</p>${rows([
-      ['הכנסה מעסק', format(input().selfIncome)], ['ניכוי פנסיה בבסיס ביטוח לאומי', `−${format(result.insurance.pensionFundDeduction)}`], ['ניכוי קרן השתלמות בבסיס ביטוח לאומי', `−${format(result.insurance.studyFundDeduction)}`], ['הכנסה לעסק לאחר ניכויי הפקדות', format(result.insurance.incomeAfterContributionDeductions)], ['שכר לתקופה', format(result.salaryAnnual)], ['תקרת בסיס לתקופה', format(result.insurance.maximumBaseForPeriod)], ['בסיס לפני התאמה', format(result.insurance.rawBase)], ['בסיס לאחר נוסחת התאמה', format(result.insurance.adjustedBase)], ['בסיס בשיעור מופחת', format(result.insurance.reducedBase)], ['בסיס בשיעור מלא', format(result.insurance.fullBase)], ['ביטוח לאומי', format(result.insurance.national)], ['ביטוח בריאות', format(result.insurance.health)], ['סה״כ ביטוח לאומי ובריאות', format(result.insurance.total)]
+    <section><h3>ביטוח לאומי</h3><p class="subtle">${result.insurance.exempt ? 'מקבל/ת קצבת זיקנה: ביטוח לאומי והניכוי בגינו הם ₪0.' : `הסכומים מותאמים ל-${input().salaryMonths} חודשים.`}</p>${result.insurance.exempt ? '' : rows([
+      ['הכנסה מעסק', format(input().selfIncome)], ['ניכוי פנסיה בבסיס ביטוח לאומי', `−${format(result.insurance.pensionFundDeduction)}`], ['ניכוי קרן השתלמות בבסיס ביטוח לאומי', `−${format(result.insurance.studyFundDeduction)}`], ['הכנסה לעסק לאחר ניכויי הפקדות', format(result.insurance.incomeAfterContributionDeductions)], ['שכר לקביעת מדרגה ותקרה בלבד', format(result.salaryAnnual)], ['תקרת בסיס לתקופה', format(result.insurance.maximumBaseForPeriod)], ['בסיס לפני התאמה', format(result.insurance.rawBase)], ['בסיס לאחר נוסחת התאמה', format(result.insurance.adjustedBase)], ['בסיס בשיעור מופחת', format(result.insurance.reducedBase)], ['בסיס בשיעור מלא', format(result.insurance.fullBase)], ['ביטוח לאומי', format(result.insurance.national)], ['ביטוח בריאות', format(result.insurance.health)], ['סה״כ ביטוח לאומי ובריאות', format(result.insurance.total)]
     ])}</section>
     <section><h3>הפקדות לתקופה</h3>${rows([
       ['הפקדה שנתית לפנסיה', format(input().pension)], ['חלק הפנסיה לתקופה', format(result.benefits.pensionContributionForPeriod)], ['הפקדה שנתית לקרן השתלמות', format(input().studyFund)], ['חלק קרן ההשתלמות לתקופה', format(result.benefits.studyContributionForPeriod)]

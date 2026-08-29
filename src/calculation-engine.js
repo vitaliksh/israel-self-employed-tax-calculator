@@ -17,23 +17,27 @@ export function calculateIncomeTax(taxableIncome, creditPoints, parameters, mont
   return { gross: round(gross), credits: round(Math.min(gross, credits)), net: round(Math.max(0, gross - credits)), creditPointValueForPeriod: round(incomeTax.creditPointAnnualValue * ratio), brackets };
 }
 
-export function calculateInsurance(selfIncome, salaryAnnual, parameters, months = 12) {
+export function calculateInsurance(selfIncome, salaryForRateAndCap, parameters, months = 12, isOldAgePensionRecipient = false) {
   const rule = parameters.insurance;
   const ratio = periodRatio(months);
   const reducedAnnualBase = rule.reducedMonthlyBase * months;
-  const selfBase = Math.max(rule.minimumAnnualBase * ratio, selfIncome);
-  // As a worker and self-employed person, the reduced tranche is used first by employment income.
-  const roomAtReducedRate = Math.max(0, reducedAnnualBase - Math.min(salaryAnnual, reducedAnnualBase));
   const maximumBaseForPeriod = rule.maximumAnnualBase * ratio;
-  const rawBase = Math.max(0, Math.min(selfBase, maximumBaseForPeriod - Math.min(salaryAnnual, maximumBaseForPeriod)));
-  // National Insurance formula: X=(Y+B*52%*(t2-t1))/(1+52%*t2). The employee income consumes B first.
+  if (isOldAgePensionRecipient) {
+    return { periodMonths: months, exempt: true, reducedBaseLimit: 0, maximumBaseForPeriod: 0, selfBase: 0, rawBase: 0, adjustedBase: 0, reducedBase: 0, fullBase: 0, national: 0, health: 0, total: 0, incomeTaxDeduction: 0 };
+  }
+  const selfBase = Math.max(rule.minimumAnnualBase * ratio, selfIncome);
+  // Salary is used only to select the self-employed rate tranche and remaining maximum base.
+  // It is never added to the insurance base or charged by this calculation.
+  const roomAtReducedRate = Math.max(0, reducedAnnualBase - Math.min(salaryForRateAndCap, reducedAnnualBase));
+  const rawBase = Math.max(0, Math.min(selfBase, maximumBaseForPeriod - Math.min(salaryForRateAndCap, maximumBaseForPeriod)));
+  // National Insurance formula: X=(Y+B*52%*(t2-t1))/(1+52%*t2), where Y is self-employed income only.
   const reducedCandidate = Math.min(rawBase, roomAtReducedRate);
   const adjustedBase = Math.min(rawBase, (rawBase + reducedCandidate * .52 * (rule.nationalFullRate - rule.nationalReducedRate)) / (1 + .52 * rule.nationalFullRate));
   const reducedBase = Math.min(adjustedBase, roomAtReducedRate);
   const fullBase = Math.max(0, adjustedBase - reducedBase);
   const national = reducedBase * rule.nationalReducedRate + fullBase * rule.nationalFullRate;
   const health = reducedBase * rule.healthReducedRate + fullBase * rule.healthFullRate;
-  return { periodMonths: months, reducedBaseLimit: round(reducedAnnualBase), maximumBaseForPeriod: round(maximumBaseForPeriod), selfBase:round(selfBase), rawBase:round(rawBase), adjustedBase:round(adjustedBase), reducedBase:round(reducedBase), fullBase:round(fullBase), national:round(national), health:round(health), total:round(national + health), incomeTaxDeduction:round(national * .52) };
+  return { periodMonths: months, exempt: false, reducedBaseLimit: round(reducedAnnualBase), maximumBaseForPeriod: round(maximumBaseForPeriod), selfBase:round(selfBase), rawBase:round(rawBase), adjustedBase:round(adjustedBase), reducedBase:round(reducedBase), fullBase:round(fullBase), national:round(national), health:round(health), total:round(national + health), incomeTaxDeduction:round(national * .52) };
 }
 
 export function calculateBenefits(input, parameters, months = 12) {
@@ -56,7 +60,7 @@ function calculateCore(input, parameters) {
   const benefits = calculateBenefits(input, parameters, months);
   // Recognized pension and study-fund deductions reduce the business income base for National Insurance.
   const insuranceIncomeAfterContributionDeductions = Math.max(0, input.selfIncome - benefits.pensionDeduction - benefits.studyDeduction);
-  const insurance = calculateInsurance(insuranceIncomeAfterContributionDeductions, salaryAnnual, parameters, months);
+  const insurance = calculateInsurance(insuranceIncomeAfterContributionDeductions, salaryAnnual, parameters, months, input.oldAgePension);
   insurance.pensionFundDeduction = benefits.pensionDeduction;
   insurance.studyFundDeduction = benefits.studyDeduction;
   insurance.incomeAfterContributionDeductions = round(insuranceIncomeAfterContributionDeductions);
