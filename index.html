@@ -27,6 +27,7 @@
           <label>לתקופה, חודשים<input id="salary-months" name="salaryMonths" type="number" value="" min="0" max="12" required /></label>
           <label>הפקדה שנתית לקרן פנסיה (₪)<input id="pension" name="pension" data-money inputmode="decimal" value="" min="0" required /></label>
           <label>הפקדה שנתית לקרן השתלמות (₪)<input id="study-fund" name="studyFund" data-money inputmode="decimal" value="" min="0" required /></label>
+          <label>ביטוח לאומי ומס בריאות ששולמו בפועל (₪)<input id="actual-insurance-paid" name="actualInsurancePaid" data-money inputmode="decimal" value="" min="0" /><small class="field-hint">לצורך ניכוי מס הכנסה בלבד: 65% מהסכום ייחשבו כדמי ביטוח לאומי, ומהם יוכר ניכוי של 52%.</small></label>
           <label class="checkbox-field"><input id="old-age-pension" name="oldAgePension" type="checkbox" />מקבל/ת קצבת זיקנה</label>
           <label>נקודות זיכוי שנתיות<input id="credit-points" name="creditPoints" inputmode="decimal" value="2.25" min="0" step="0.25" required /></label>
         </form>
@@ -38,7 +39,7 @@
           <h2>הכנסה חייבת במס</h2>
           <dl class="taxable-breakdown">
             <dt>הכנסה התחלתית</dt><dd id="starting-income">₪0</dd>
-            <dt>ניכוי ביטוח לאומי</dt><dd id="insurance-deduction">₪0</dd>
+            <dt id="insurance-deduction-label">ניכוי ביטוח לאומי</dt><dd id="insurance-deduction">₪0</dd>
             <dt>ניכוי קרן פנסיה</dt><dd id="pension-deduction">₪0</dd>
             <dt>ניכוי קרן השתלמות</dt><dd id="study-deduction">₪0</dd>
           </dl>

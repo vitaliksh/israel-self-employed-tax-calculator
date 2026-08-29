@@ -64,6 +64,15 @@ function calculateCore(input, parameters) {
   insurance.pensionFundDeduction = benefits.pensionDeduction;
   insurance.studyFundDeduction = benefits.studyDeduction;
   insurance.incomeAfterContributionDeductions = round(insuranceIncomeAfterContributionDeductions);
+  const hasActualInsurancePaid = Number.isFinite(input.actualInsurancePaid);
+  insurance.deductionSource = hasActualInsurancePaid ? 'actual-paid' : 'estimated';
+  if (hasActualInsurancePaid) {
+    insurance.actualPaidTotal = round(input.actualInsurancePaid);
+    insurance.actualPaidNational = round(input.actualInsurancePaid * .65);
+    // The entered amount includes health insurance. Until the split is known, 65% is treated as National Insurance.
+    // This actual-payment deduction replaces, rather than supplements, the estimated 52% deduction.
+    insurance.incomeTaxDeduction = round(insurance.actualPaidNational * .52);
+  }
   const combinedBeforeBenefits = salaryAnnual + input.selfIncome;
   const combinedTaxable = Math.max(0, combinedBeforeBenefits - benefits.totalDeduction - insurance.incomeTaxDeduction);
   const salaryTax = calculateIncomeTax(salaryAnnual, input.creditPoints, parameters, months);
