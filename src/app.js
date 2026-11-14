@@ -170,7 +170,20 @@ function writeFormInputs(inputs) {
 function snapshot() { return JSON.stringify({ name: $('#client-name').value.trim(), inputs: readFormInputs() }); }
 function isDirty() { return snapshot() !== savedSnapshot; }
 function markSaved() { savedSnapshot = snapshot(); updateClientStatus(); }
-function confirmDiscard() { return !isDirty() || window.confirm('יש שינויים שלא נשמרו. להמשיך בלי לשמור?'); }
+/** Before leaving the current client or version: save, discard or stay. Resolves true when it is safe to continue. */
+async function resolveUnsavedChanges() {
+  if (!isDirty()) return true;
+  const name = $('#client-name').value.trim();
+  $('#unsaved-message').textContent = name ? `יש שינויים שלא נשמרו עבור "${name}".` : 'יש שינויים שלא נשמרו.';
+  const dialog = $('#unsaved-dialog');
+  dialog.returnValue = '';
+  const choice = await new Promise((resolve) => {
+    dialog.addEventListener('close', () => resolve(dialog.returnValue), { once: true });
+    dialog.showModal();
+  });
+  if (choice === 'save') return saveCurrentClient();
+  return choice === 'discard';
+}
 function recordLabel(record) {
   const months = numeric(record.inputs.salaryMonths);
   const income = numeric(record.inputs.selfIncome);
@@ -217,30 +230,38 @@ function startNewClient() {
 }
 function saveCurrentClient() {
   const name = $('#client-name').value.trim();
-  if (!name) { updateClientStatus('יש להזין שם ומשפחה לפני השמירה.'); $('#client-name').focus(); return; }
+  if (!name) { updateClientStatus('יש להזין שם ומשפחה לפני השמירה.'); $('#client-name').focus(); return false; }
   let clientId = currentClientId;
   if (!clientId) {
     const existing = findClientByName(name);
-    if (existing && window.confirm(`הלקוח „${existing.name}” כבר קיים. להוסיף לו גרסה חדשה?`)) clientId = existing.id;
+    if (existing) {
+      if (!window.confirm(`הלקוח "${existing.name}" כבר קיים. לשמור כגרסה חדשה שלו?\n(ביטול — לא לשמור, כדי לשנות את השם)`)) { $('#client-name').focus(); return false; }
+      clientId = existing.id;
+    }
   }
   const saved = saveRecord(clientId, name, readFormInputs());
   currentClientId = saved.clientId; currentRecordId = saved.recordId;
   markSaved(); renderClientControls();
   updateClientStatus(`נשמרה גרסה חדשה: ${recordDate.format(new Date())}`);
+  return true;
 }
 
-$('#client-select').addEventListener('change', (event) => {
+$('#client-select').addEventListener('change', async (event) => {
   const target = event.target.value;
-  if (!confirmDiscard()) { event.target.value = currentClientId; return; }
+  event.target.value = currentClientId;
+  if (!(await resolveUnsavedChanges())) { renderClientControls(); return; }
   if (target) loadClient(target); else startNewClient();
 });
-$('#record-select').addEventListener('change', (event) => {
-  if (!confirmDiscard()) { event.target.value = currentRecordId; return; }
-  loadClient(currentClientId, event.target.value);
+$('#record-select').addEventListener('change', async (event) => {
+  const clientId = currentClientId;
+  const target = event.target.value;
+  event.target.value = currentRecordId;
+  if (!(await resolveUnsavedChanges())) { renderClientControls(); return; }
+  loadClient(clientId, target);
 });
 $('#client-name').addEventListener('input', () => updateClientStatus());
 $('#save-client').addEventListener('click', saveCurrentClient);
-$('#new-client').addEventListener('click', () => { if (confirmDiscard()) startNewClient(); });
+$('#new-client').addEventListener('click', async () => { if (await resolveUnsavedChanges()) startNewClient(); });
 $('#delete-record').addEventListener('click', () => {
   const client = getClient(currentClientId);
   const record = client?.records.find((item) => item.id === currentRecordId);
@@ -250,7 +271,7 @@ $('#delete-record').addEventListener('click', () => {
 });
 $('#delete-client').addEventListener('click', () => {
   const client = getClient(currentClientId);
-  if (!client || !window.confirm(`למחוק את הלקוח „${client.name}” ואת כל ${client.records.length} הגרסאות שלו? לא ניתן לשחזר.`)) return;
+  if (!client || !window.confirm(`למחוק את הלקוח "${client.name}" ואת כל ${client.records.length} הגרסאות שלו? לא ניתן לשחזר.`)) return;
   deleteClient(client.id); startNewClient();
 });
 $('#export-clients').addEventListener('click', () => {
