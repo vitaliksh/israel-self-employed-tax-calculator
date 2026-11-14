@@ -64,11 +64,13 @@ function calculateCore(input, parameters) {
   insurance.pensionFundDeduction = benefits.pensionDeduction;
   insurance.studyFundDeduction = benefits.studyDeduction;
   insurance.incomeAfterContributionDeductions = round(insuranceIncomeAfterContributionDeductions);
-  const hasActualInsurancePaid = Number.isFinite(input.actualInsurancePaid);
+  // The actual National Insurance payment is entered per month; the period total is monthly × months.
+  const hasActualInsurancePaid = Number.isFinite(input.actualInsuranceMonthly);
   insurance.deductionSource = hasActualInsurancePaid ? 'actual-paid' : 'estimated';
   if (hasActualInsurancePaid) {
-    insurance.actualPaidTotal = round(input.actualInsurancePaid);
-    insurance.actualPaidNational = round(input.actualInsurancePaid * .65);
+    insurance.actualPaidMonthly = round(input.actualInsuranceMonthly);
+    insurance.actualPaidTotal = round(input.actualInsuranceMonthly * months);
+    insurance.actualPaidNational = round(insurance.actualPaidTotal * .65);
     // The entered amount includes health insurance. Until the split is known, 65% is treated as National Insurance.
     // This actual-payment deduction replaces, rather than supplements, the estimated 52% deduction.
     insurance.incomeTaxDeduction = round(insurance.actualPaidNational * .52);
@@ -136,6 +138,6 @@ function calculateSettlement(result, input) {
     ? { entered: true, calculated, paid: round(paid), balance: round(calculated - paid) }
     : { entered: false, calculated, paid: 0, balance: 0 };
   const incomeTax = line(result.incomeTax, input.incomeTaxPaid);
-  const insurance = line(result.insurance.total, input.actualInsurancePaid);
+  const insurance = line(result.insurance.total, result.insurance.deductionSource === 'actual-paid' ? result.insurance.actualPaidTotal : null);
   return { incomeTax, insurance, entered: incomeTax.entered || insurance.entered, balance: round(incomeTax.balance + insurance.balance) };
 }

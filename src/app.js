@@ -19,9 +19,9 @@ const thousandFormat = new Intl.NumberFormat('he-IL', { maximumFractionDigits: 0
 function input() {
   const values = Object.fromEntries([...new FormData($('#calculator-form'))].map(([key, value]) => [key, numeric(value)]));
   const optionalMoney = (selector) => { const field = $(selector); return field.value.trim() === '' ? null : numeric(field.value); };
-  const actualInsurancePaid = optionalMoney('#actual-insurance-paid');
+  const actualInsuranceMonthly = optionalMoney('#actual-insurance-monthly');
   const incomeTaxPaid = optionalMoney('#income-tax-paid');
-  return { ...values, actualInsurancePaid, incomeTaxPaid, oldAgePension: $('#old-age-pension').checked, insuredSalary: values.salaryMonthly * values.salaryMonths, studyFundSalaryBase: 0 };
+  return { ...values, actualInsuranceMonthly, incomeTaxPaid, oldAgePension: $('#old-age-pension').checked, insuredSalary: values.salaryMonthly * values.salaryMonths, studyFundSalaryBase: 0 };
 }
 function format(value) { return currency.format(value); }
 function formatMoneyInput(field) {
@@ -53,6 +53,9 @@ function render() {
   $('#insurance-deduction-label').textContent = result.insurance.deductionSource === 'actual-paid'
     ? 'ניכוי ביטוח לאומי (לפי תשלום בפועל)'
     : 'ניכוי ביטוח לאומי';
+  $('#actual-insurance-total').textContent = result.insurance.deductionSource === 'actual-paid'
+    ? `סה״כ ששולם לתקופה: ${format(result.insurance.actualPaidMonthly)} × ${result.months} חודשים = ${format(result.insurance.actualPaidTotal)}`
+    : '';
   $('#pension-deduction').textContent = `−${format(result.benefits.pensionDeduction)}`;
   $('#study-deduction').textContent = `−${format(result.benefits.studyDeduction)}`;
   $('#taxable-income').value = format(result.combinedTaxable); $('#taxable-income').textContent = format(result.combinedTaxable);
@@ -106,7 +109,7 @@ function saveEditedParameters() {
 }
 function renderFormulas() { $('#formula-list').innerHTML = [
   ['מס הכנסה', 'כל מדרגות המס, נקודות הזיכוי ותקרות ההטבה מותאמות למספר החודשים שנבחר. שלב 1: השכר ברוטו ממלא תחילה את מדרגות המס לתקופה ומנצל את נקודות הזיכוי לתקופה עד לגובה המס שלו. שלב 2: ההכנסה מעסק, לאחר ניכויים מוכרים, מחושבת רק מהיתרה במדרגה שבה הסתיים השכר ומהמדרגות שמעליה. שלב 3: מהמס בגין העסק מופחתות רק נקודות הזיכוי שלא נוצלו בשכר וזיכוי הפנסיה. המס שנוכה מהשכר אינו מתווסף לתוצאה — התוצאה היא המס בגין ההכנסה כעצמאי בלבד.', 'Tax business = max(0, Tax(salary + business − deductions) − Tax(salary) − unused credit points − pension credit)'],
-    ['ביטוח לאומי ובריאות', 'מקבל/ת קצבת זיקנה פטור/ה מחישוב זה. אחרת, בסיס הביטוח מחושב רק מההכנסה מעסק לפי נוסחת ביטוח לאומי. השכר אינו מחויב כאן; הוא משמש רק לקביעת המדרגה ולבדיקת תקרת ההכנסה. כאשר מוזן תשלום בפועל, רק הניכוי למס הכנסה מוחלף: 65% מהסכום נחשבים לביטוח לאומי ומהם 52% מוכרים לניכוי.', 'X = (Y + B × 0.52 × (t2 − t1)) / (1 + 0.52 × t2)'],
+    ['ביטוח לאומי ובריאות', 'מקבל/ת קצבת זיקנה פטור/ה מחישוב זה. אחרת, בסיס הביטוח מחושב רק מההכנסה מעסק לפי נוסחת ביטוח לאומי. השכר אינו מחויב כאן; הוא משמש רק לקביעת המדרגה ולבדיקת תקרת ההכנסה. כאשר מוזן תשלום חודשי בפועל, סה״כ ששולם לתקופה = תשלום חודשי × מספר החודשים. הסה״כ מחליף רק את הניכוי למס הכנסה: 65% ממנו נחשבים לביטוח לאומי ומהם 52% מוכרים לניכוי.', 'X = (Y + B × 0.52 × (t2 − t1)) / (1 + 0.52 × t2)'],
   ['פנסיה וקרן השתלמות', 'הפקדה שנתית מומרת תחילה לחלק היחסי בתקופה. ניכוי פנסיה מחושב עד 11% מהכנסה עסקית שאינה מבוטחת; יתרה עשויה לזכות בזיכוי של 35% עד 5%. קרן השתלמות: עד 4.5% מהכנסה עסקית, לאחר קיזוז שכר קובע שבו המעסיק הפקיד לקרן.', 'period contribution = annual contribution × months / 12'],
   ['יתרה לתשלום או להחזר', 'לכל תשלום בנפרד: הסכום המחושב לתקופה פחות הסכום ששולם עבור אותה תקופה. מס הכנסה מושווה למס בגין העסק בלבד (ללא המס שנוכה מהשכר). ביטוח לאומי מושווה לסך ביטוח לאומי ובריאות. יתרה חיובית — לתשלום; יתרה שלילית — צפוי החזר. תשלום שלא הוזן אינו נכלל בסיכום.', 'balance = calculated − paid; total = balance(income tax) + balance(insurance)']
 ].map(([title, text, equation]) => `<article class="formula"><h3>${title}</h3><p>${text}</p><p class="formula-equation">${equation}</p></article>`).join(''); }
@@ -127,7 +130,7 @@ function renderFullCalculation(result) {
   const allPointsValue = input().creditPoints * periodPointValue;
   $('#full-calculation').innerHTML = `
     <section><h3>מס הכנסה</h3><p class="subtle">תקופת החישוב: ${input().salaryMonths} חודשים</p>${rows([
-      ['שכר ברוטו לתקופה', format(result.salaryAnnual)], ['הכנסה מעסק לתקופה', format(input().selfIncome)], ['ניכוי ביטוח לאומי', result.insurance.deductionSource === 'actual-paid' ? `תשלום בפועל ${format(result.insurance.actualPaidTotal)} × 65% × 52% = −${format(result.insurance.incomeTaxDeduction)}` : `−${format(result.insurance.incomeTaxDeduction)}`], ['ניכויים מוכרים', `−${format(result.benefits.totalDeduction + result.insurance.incomeTaxDeduction)}`], ['הכנסה חייבת למס לתקופה', format(result.combinedTaxable)]
+      ['שכר ברוטו לתקופה', format(result.salaryAnnual)], ['הכנסה מעסק לתקופה', format(input().selfIncome)], ['ניכוי ביטוח לאומי', result.insurance.deductionSource === 'actual-paid' ? `תשלום בפועל ${format(result.insurance.actualPaidMonthly)} × ${result.months} ח׳ = ${format(result.insurance.actualPaidTotal)} × 65% × 52% = −${format(result.insurance.incomeTaxDeduction)}` : `−${format(result.insurance.incomeTaxDeduction)}`], ['ניכויים מוכרים', `−${format(result.benefits.totalDeduction + result.insurance.incomeTaxDeduction)}`], ['הכנסה חייבת למס לתקופה', format(result.combinedTaxable)]
     ])}${brackets('חישוב מס על השכר לפני נקודות זיכוי', result.salaryTax.brackets)}${brackets('חישוב מס בגין העסק לפני נקודות זיכוי', result.combinedTax.brackets, result.salaryTax.brackets)}${rows([
       ['שווי נקודת זיכוי אחת לתקופה', format(periodPointValue)], ['חישוב נקודות זיכוי לתקופה', `${input().creditPoints} × ${format(periodPointValue)} = ${format(allPointsValue)}`], ['נקודות זיכוי שנוצלו בשכר', `−${format(result.salaryTax.credits)}`], ['יתרת נקודות זיכוי לעסק', format(result.unusedCreditPointsValue)], ['נקודות זיכוי שנוצלו בעסק', `−${format(result.creditPointsUsedForBusiness)}`], ['זיכוי פנסיה', `−${format(result.benefits.pensionCredit)}`], ['מס הכנסה סופי בגין העסק', format(result.incomeTax)]
     ])}</section>
@@ -159,7 +162,15 @@ function formFields() { return [...$('#calculator-form').elements].filter((field
 function readFormInputs() {
   return Object.fromEntries(formFields().map((field) => [field.name, field.type === 'checkbox' ? field.checked : field.value]));
 }
-function writeFormInputs(inputs) {
+// Versions saved before the monthly field held the period total in actualInsurancePaid.
+function migrateInputs(inputs) {
+  if (inputs.actualInsuranceMonthly !== undefined || !String(inputs.actualInsurancePaid ?? '').trim()) return inputs;
+  const months = numeric(inputs.salaryMonths);
+  const total = numeric(inputs.actualInsurancePaid);
+  return { ...inputs, actualInsuranceMonthly: months ? String(Math.round(total / months)) : String(total) };
+}
+function writeFormInputs(rawInputs) {
+  const inputs = migrateInputs(rawInputs);
   formFields().forEach((field) => {
     const value = inputs[field.name] ?? DEFAULT_FIELD_VALUES[field.name] ?? '';
     if (field.type === 'checkbox') field.checked = Boolean(value); else field.value = value;
