@@ -47,6 +47,10 @@ select { width:100%; border:1px solid #bcccdc; border-radius:8px; padding:10px; 
 .client-backup[open] > summary { margin-bottom:8px; }
 .client-backup p { margin-bottom:8px; }
 .print-only { display:none; }
+.agreement-fieldset { display:grid; gap:12px; border:1px solid var(--line); border-radius:12px; padding:12px 14px 14px; margin:4px 0 0; }
+.agreement-fieldset legend { font-weight:700; padding:0 6px; }
+.agreement-fieldset .field-hint { margin:0; }
+textarea { width:100%; border:1px solid #bcccdc; border-radius:8px; padding:11px; font:inherit; text-align:right; resize:vertical; background:#fffdf3; }
 .unsaved-dialog { width:min(440px, calc(100% - 30px)); } .unsaved-dialog h2 { margin-bottom:8px; } .unsaved-actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:16px; }
 @media (max-width:760px) { .topbar { flex-direction:column; align-items:stretch; } .header-actions { flex-wrap:wrap; } }
 @media print {
@@ -54,7 +58,7 @@ select { width:100%; border:1px solid #bcccdc; border-radius:8px; padding:10px; 
   :root { font-size:11pt; }
   body { background:#fff; }
   .topbar, .input-card, .no-print, .formula-section, dialog, details:not([open]) { display:none !important; }
-  .print-only { display:block; }
+  .print-only { display:block; } .print-only.print-empty { display:none; }
   .layout { display:block; max-width:none; padding:0; }
   .results { display:block; }
   .results > * { margin-bottom:10px; }

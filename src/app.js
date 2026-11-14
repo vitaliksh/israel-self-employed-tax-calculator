@@ -301,14 +301,23 @@ function renderPrintHeader(client, record) {
   const parts = [name ? `לקוח: ${escapeHtml(name)}` : '', record ? `גרסה מ־${recordDate.format(new Date(record.savedAt))}` : '', `הופק: ${recordDate.format(new Date())}`].filter(Boolean);
   $('#print-header').innerHTML = `<h2>מחשבון מס לעצמאי — 2026</h2><p>${parts.join(' · ')}</p>`;
 }
-function renderPrintInputs() {
-  const rows = formFields().flatMap((field) => {
+// Fields marked data-private (personal note) never reach the printout or the clipboard.
+// Fields marked data-agreement get their own block instead of the general inputs list.
+function printRows(fields) {
+  return fields.flatMap((field) => {
     const label = field.closest('label')?.firstChild?.textContent.trim() || field.name;
     if (field.type === 'checkbox') return field.checked ? [[field.closest('label').textContent.trim(), 'כן']] : [];
     if (field.value.trim() === '') return [];
     return [[label, field.matches('[data-money]') ? format(numeric(field.value)) : field.value]];
   });
-  $('#print-inputs').innerHTML = `<h2>נתונים שהוזנו</h2><dl>${rows.map(([label, value]) => `<dt>${escapeHtml(label)}</dt><dd>${escapeHtml(value)}</dd>`).join('')}</dl>`;
+}
+const definitionList = (rows) => `<dl>${rows.map(([label, value]) => `<dt>${escapeHtml(label)}</dt><dd>${escapeHtml(value)}</dd>`).join('')}</dl>`;
+function renderPrintInputs() {
+  const fields = formFields().filter((field) => !field.matches('[data-private]'));
+  $('#print-inputs').innerHTML = `<h2>נתונים שהוזנו</h2>${definitionList(printRows(fields.filter((field) => !field.matches('[data-agreement]'))))}`;
+  const agreementRows = printRows(fields.filter((field) => field.matches('[data-agreement]')));
+  $('#print-agreement').innerHTML = agreementRows.length ? `<h2>סוכם עם הלקוח ושולם בפועל</h2>${definitionList(agreementRows)}` : '';
+  $('#print-agreement').classList.toggle('print-empty', !agreementRows.length);
 }
 function preparePrintContent() { updateClientStatus(); renderPrintInputs(); }
 window.addEventListener('beforeprint', preparePrintContent);
@@ -339,6 +348,7 @@ function copySections() {
   const header = $('#print-header');
   sections.push({ title: clean(header.querySelector('h2').textContent), subtitle: clean(header.querySelector('p').textContent), blocks: [] });
   sections.push({ blocks: contentBlocks($('#print-inputs')) });
+  if (!$('#print-agreement').classList.contains('print-empty')) sections.push({ blocks: contentBlocks($('#print-agreement')) });
   sections.push({ blocks: contentBlocks($('.taxable-card')) });
   sections.push({ blocks: [{ heading: 'תוצאות' }, { rows: [...document.querySelectorAll('.result-grid article')].map((card) => [clean(card.querySelector('h3').textContent), clean(card.querySelector('output').textContent), clean(card.querySelector('small')?.textContent)]) }] });
   if (isShown($('#settlement-card'))) sections.push({ blocks: contentBlocks($('#settlement-card')) });

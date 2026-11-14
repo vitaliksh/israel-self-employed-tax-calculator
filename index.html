@@ -53,12 +53,20 @@
           <label>מס הכנסה ששולם לתקופה (₪)<input id="income-tax-paid" name="incomeTaxPaid" data-money inputmode="decimal" value="" min="0" /><small class="field-hint">סך המס ששולם עבור כל התקופה (למשל מקדמות), לחישוב היתרה לתשלום או להחזר.</small></label>
           <label class="checkbox-field"><input id="old-age-pension" name="oldAgePension" type="checkbox" />מקבל/ת קצבת זיקנה</label>
           <label>נקודות זיכוי שנתיות<input id="credit-points" name="creditPoints" inputmode="decimal" value="2.25" min="0" step="0.25" required /></label>
+          <fieldset class="agreement-fieldset">
+            <legend>סוכם עם הלקוח ושולם בפועל</legend>
+            <p class="field-hint">לתיעוד בלבד — אינו משנה את החישוב. מופיע בהדפסה ובהעתקה.</p>
+            <label>מס הכנסה שסוכם ושולם (₪)<input id="agreed-income-tax" name="agreedIncomeTax" data-money data-agreement inputmode="decimal" value="" min="0" /></label>
+            <label>ביטוח לאומי שסוכם ושולם (₪)<input id="agreed-insurance" name="agreedInsurance" data-money data-agreement inputmode="decimal" value="" min="0" /></label>
+          </fieldset>
+          <label class="private-note">תזכורת אישית<textarea id="client-note" name="clientNote" data-private rows="3" placeholder="הערות לעצמך על הלקוח או על הגרסה"></textarea><small class="field-hint">נשמרת עם הגרסה. לא מופיעה בהדפסה ובהעתקה.</small></label>
         </form>
       </section>
 
       <section class="results" aria-live="polite">
         <header id="print-header" class="print-only print-header"></header>
         <section id="print-inputs" class="print-only card print-inputs"></section>
+        <section id="print-agreement" class="print-only card print-inputs"></section>
         <div id="data-updated" class="notice hidden no-print">נתוני המס עודכנו. החישוב מתבצע כעת לפי נתונים חדשים.</div>
         <div class="card taxable-card">
           <h2>הכנסה חייבת במס</h2>
