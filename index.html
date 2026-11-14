@@ -14,11 +14,33 @@
         <p class="eyebrow">שנת המס 2026 · גרסת נתונים <span id="data-version"></span></p>
         <h1>מחשבון מס לעצמאי</h1>
       </div>
-      <div class="header-actions"><button id="update-button" class="secondary" type="button">בדיקת עדכון</button><button id="settings-button" class="secondary" type="button">הגדרות נתונים</button></div>
+      <div class="header-actions"><button id="print-button" class="primary" type="button">הדפסה / PDF</button><button id="copy-button" class="primary" type="button">העתקה</button><button id="update-button" class="secondary" type="button">בדיקת עדכון</button><button id="settings-button" class="secondary" type="button">הגדרות נתונים</button></div>
     </header>
 
     <main class="layout">
       <section class="card input-card" aria-labelledby="inputs-title">
+        <section class="client-panel no-print" aria-labelledby="client-title">
+          <h2 id="client-title">לקוח</h2>
+          <label>בחירת לקוח<select id="client-select"><option value="">— לקוח חדש —</option></select></label>
+          <label>שם ומשפחה<input id="client-name" autocomplete="off" placeholder="לדוגמה: ישראל ישראלי" /></label>
+          <label id="record-field" class="hidden">גרסה שמורה<select id="record-select"></select></label>
+          <div class="client-actions">
+            <button id="save-client" class="primary" type="button">שמור גרסה</button>
+            <button id="new-client" class="secondary" type="button">לקוח חדש</button>
+            <button id="delete-record" class="secondary hidden" type="button">מחק גרסה</button>
+            <button id="delete-client" class="secondary hidden" type="button">מחק לקוח</button>
+          </div>
+          <p id="client-status" class="muted client-status" role="status"></p>
+          <details class="client-backup">
+            <summary>גיבוי לקוחות</summary>
+            <p class="muted">הנתונים נשמרים בדפדפן זה בלבד. מומלץ לייצא קובץ גיבוי מדי פעם ולשמור אותו במקום בטוח; ייבוא מוסיף גרסאות חסרות ואינו מוחק קיימות.</p>
+            <div class="client-actions">
+              <button id="export-clients" class="secondary" type="button">ייצוא לקובץ</button>
+              <button id="import-clients" class="secondary" type="button">ייבוא מקובץ</button>
+              <input id="import-file" type="file" accept="application/json,.json" hidden />
+            </div>
+          </details>
+        </section>
         <h2 id="inputs-title">נתוני הכנסה והפקדות</h2>
         <p class="muted">יש להזין סכומים מצטברים מתחילת שנת המס ועד סוף התקופה. ההכנסה מעסק היא רווח לאחר הוצאות עסקיות ולפני הטבות מס אישיות.</p>
         <form id="calculator-form">
@@ -27,14 +49,17 @@
           <label>לתקופה, חודשים<input id="salary-months" name="salaryMonths" type="number" value="" min="0" max="12" required /></label>
           <label>הפקדה שנתית לקרן פנסיה (₪)<input id="pension" name="pension" data-money inputmode="decimal" value="" min="0" required /></label>
           <label>הפקדה שנתית לקרן השתלמות (₪)<input id="study-fund" name="studyFund" data-money inputmode="decimal" value="" min="0" required /></label>
-          <label>ביטוח לאומי ומס בריאות ששולמו בפועל (₪)<input id="actual-insurance-paid" name="actualInsurancePaid" data-money inputmode="decimal" value="" min="0" /><small class="field-hint">לצורך ניכוי מס הכנסה בלבד: 65% מהסכום ייחשבו כדמי ביטוח לאומי, ומהם יוכר ניכוי של 52%.</small></label>
+          <label>ביטוח לאומי ומס בריאות ששולמו בפועל (₪)<input id="actual-insurance-paid" name="actualInsurancePaid" data-money inputmode="decimal" value="" min="0" /><small class="field-hint">לצורך ניכוי מס הכנסה בלבד: 65% מהסכום ייחשבו כדמי ביטוח לאומי, ומהם יוכר ניכוי של 52%. הסכום משמש גם לחישוב היתרה לתשלום או להחזר.</small></label>
+          <label>מס הכנסה ששולם לתקופה (₪)<input id="income-tax-paid" name="incomeTaxPaid" data-money inputmode="decimal" value="" min="0" /><small class="field-hint">סך המס ששולם עבור כל התקופה (למשל מקדמות), לחישוב היתרה לתשלום או להחזר.</small></label>
           <label class="checkbox-field"><input id="old-age-pension" name="oldAgePension" type="checkbox" />מקבל/ת קצבת זיקנה</label>
           <label>נקודות זיכוי שנתיות<input id="credit-points" name="creditPoints" inputmode="decimal" value="2.25" min="0" step="0.25" required /></label>
         </form>
       </section>
 
       <section class="results" aria-live="polite">
-        <div id="data-updated" class="notice hidden">נתוני המס עודכנו. החישוב מתבצע כעת לפי נתונים חדשים.</div>
+        <header id="print-header" class="print-only print-header"></header>
+        <section id="print-inputs" class="print-only card print-inputs"></section>
+        <div id="data-updated" class="notice hidden no-print">נתוני המס עודכנו. החישוב מתבצע כעת לפי נתונים חדשים.</div>
         <div class="card taxable-card">
           <h2>הכנסה חייבת במס</h2>
           <dl class="taxable-breakdown">
@@ -52,6 +77,18 @@
           <article class="card"><h3>הטבת פנסיה מחושבת</h3><output id="pension-benefit">₪0</output><small id="pension-benefit-detail"></small></article>
           <article class="card"><h3>הטבת השתלמות מחושבת</h3><output id="study-benefit">₪0</output><small id="study-benefit-detail"></small></article>
         </div>
+        <section id="settlement-card" class="card settlement-card hidden" aria-labelledby="settlement-title">
+          <h2 id="settlement-title">יתרה לתקופה</h2>
+          <table class="settlement-table">
+            <thead><tr><th scope="col"></th><th scope="col">מחושב</th><th scope="col">שולם</th><th scope="col">יתרה</th></tr></thead>
+            <tbody>
+              <tr id="settlement-income-tax"><th scope="row">מס הכנסה</th><td data-cell="calculated"></td><td data-cell="paid"></td><td data-cell="balance"></td></tr>
+              <tr id="settlement-insurance"><th scope="row">ביטוח לאומי ובריאות</th><td data-cell="calculated"></td><td data-cell="paid"></td><td data-cell="balance"></td></tr>
+            </tbody>
+          </table>
+          <div class="divider"></div>
+          <div class="settlement-total"><span id="settlement-total-label">יתרה לתשלום</span><output id="settlement-total">₪0</output></div>
+        </section>
         <section class="card recommendation-card">
           <h2>המלצה להפקדה שנתית למיצוי הטבות מס</h2>
           <dl><dt>קרן פנסיה</dt><dd id="recommended-pension">₪0</dd><dt>קרן השתלמות</dt><dd id="recommended-study-fund">₪0</dd></dl>

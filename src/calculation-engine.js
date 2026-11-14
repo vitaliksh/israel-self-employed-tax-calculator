@@ -125,5 +125,17 @@ export function calculateSelfEmployedTax(input, parameters) {
   const studyFundCap = ratio ? result.benefits.studyEligibleIncome * parameters.benefits.studyFundDeductionRate / ratio : 0;
   result.benefits.annualPensionRecommendation = annualRecommendation(input, parameters, 'pension', pensionCap);
   result.benefits.annualStudyFundRecommendation = annualRecommendation(input, parameters, 'studyFund', studyFundCap);
+  result.settlement = calculateSettlement(result, input);
   return result;
+}
+
+// Balance for the period: calculated amount minus the amount already paid.
+// A positive balance is still due; a negative balance is expected back.
+function calculateSettlement(result, input) {
+  const line = (calculated, paid) => Number.isFinite(paid)
+    ? { entered: true, calculated, paid: round(paid), balance: round(calculated - paid) }
+    : { entered: false, calculated, paid: 0, balance: 0 };
+  const incomeTax = line(result.incomeTax, input.incomeTaxPaid);
+  const insurance = line(result.insurance.total, input.actualInsurancePaid);
+  return { incomeTax, insurance, entered: incomeTax.entered || insurance.entered, balance: round(incomeTax.balance + insurance.balance) };
 }
